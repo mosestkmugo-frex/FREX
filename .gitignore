@@ -1,0 +1,18 @@
+node_modules
+dist
+.next
+.expo
+*.log
+.env
+.env.local
+.env.*.local
+
+# Prisma
+packages/database/prisma/migrations/*_migration
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store

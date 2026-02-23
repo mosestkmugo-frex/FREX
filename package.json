@@ -1,0 +1,21 @@
+{
+  "name": "frex",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FREX - On-demand freight and logistics platform",
+  "scripts": {
+    "dev": "pnpm run --parallel dev",
+    "dev:api": "pnpm --filter @frex/api dev",
+    "dev:web": "pnpm --filter @frex/web dev",
+    "dev:mobile": "pnpm --filter @frex/mobile start",
+    "build": "pnpm run -r build",
+    "db:generate": "pnpm --filter @frex/database generate",
+    "db:migrate": "pnpm --filter @frex/database migrate",
+    "db:studio": "pnpm --filter @frex/database studio",
+    "lint": "pnpm run -r lint"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@9.0.0"
+}
