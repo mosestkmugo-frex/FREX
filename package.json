@@ -2,20 +2,33 @@
   "name": "frex",
   "version": "0.1.0",
   "private": true,
-  "description": "FREX - On-demand freight and logistics platform",
+  "description": "FREX – On-demand freight and logistics platform (Supabase)",
   "scripts": {
-    "dev": "pnpm run --parallel dev",
-    "dev:api": "pnpm --filter @frex/api dev",
-    "dev:web": "pnpm --filter @frex/web dev",
-    "dev:mobile": "pnpm --filter @frex/mobile start",
-    "build": "pnpm run -r build",
-    "db:generate": "pnpm --filter @frex/database generate",
-    "db:migrate": "pnpm --filter @frex/database migrate",
-    "db:studio": "pnpm --filter @frex/database studio",
-    "lint": "pnpm run -r lint"
+    "dev": "npx next dev",
+    "build": "npx next build",
+    "start": "npx next start",
+    "lint": "npx next lint",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset"
   },
-  "engines": {
-    "node": ">=18"
+  "engines": { "node": ">=18" },
+  "packageManager": "pnpm@9.0.0",
+  "dependencies": {
+    "@frex/shared": "file:./packages/shared",
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.47.10",
+    "next": "14.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zod": "^3.23.0"
   },
-  "packageManager": "pnpm@9.0.0"
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.3.0"
+  }
 }

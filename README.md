@@ -2,59 +2,57 @@
 
 FREX connects shippers with drivers, logistics companies, and storage providers. Built for South Africa (ZAR) with international scalability.
 
-## Repo structure
+**Stack:** Next.js 14, TypeScript, Supabase (Auth + Postgres + Realtime), Tailwind CSS. Single app (no separate API or mobile projects).
 
-| Path | Stack | Purpose |
-|------|--------|---------|
-| `apps/api` | Node.js, Express, TypeScript, Prisma | REST API, auth, bookings, payments, tracking |
-| `apps/web` | Next.js 14, TypeScript, Tailwind | Shipper / Driver / Logistics / Storage / Admin dashboards |
-| `apps/mobile` | React Native (Expo), TypeScript | iOS & Android apps |
-| `packages/shared` | TypeScript | Shared types, constants, i18n, ZAR/currency |
-| `packages/database` | Prisma | Schema, migrations, client |
+## Project structure
 
-## Phase 1 MVP (current)
-
-- [x] Monorepo + shared types
-- [x] Auth (email/phone OTP, JWT, roles: shipper, driver, logistics, storage)
-- [x] User profiles and verification status
-- [x] Booking flow (create, match, accept, pickup, delivery)
-- [x] Basic payment/escrow flow
-- [x] Real-time tracking (WebSocket)
-- [x] Two-way ratings
+| Path | Purpose |
+|------|--------|
+| `src/` | Next.js app (pages, API routes, components) |
+| `src/app/api/` | API routes (bookings, auth via Supabase) |
+| `src/lib/supabase/` | Supabase client (browser, server, middleware) |
+| `packages/shared` | Shared types, constants, pricing (ZAR) |
+| `supabase/migrations/` | Database schema and RLS |
 
 ## Quick start
 
-```bash
-# Install
-pnpm install
+1. **Create a Supabase project** at [supabase.com](https://supabase.com). Get your project URL and anon key.
 
-# Env (copy and fill)
-cp apps/api/.env.example apps/api/.env
-cp packages/database/.env.example packages/database/.env
-# Set DATABASE_URL in both to your PostgreSQL URL.
+2. **Env:**
+   ```bash
+   cp .env.example .env.local
+   # Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+   ```
 
-# DB
-pnpm db:generate
-pnpm db:migrate
+3. **Database:** In the Supabase SQL Editor, run the migration:
+   - Open **SQL Editor** → New query → paste contents of `supabase/migrations/20250224000001_initial_schema.sql` → Run.
+   - If the trigger `on_auth_user_created` fails (permissions), create the profile from your app on first sign-in or add a small API route that upserts `profiles` using the service role key.
 
-# Run API + Web
-pnpm dev
-# Or separately:
-pnpm dev:api    # http://localhost:4000
-pnpm dev:web    # http://localhost:3000
-pnpm dev:mobile # Expo (add apps/mobile/assets/icon.png and splash.png for Expo)
-```
+4. **Auth:** In Supabase Dashboard → Authentication → Providers, enable Email. (Optional: disable “Confirm email” for faster local testing.)
 
-## Env (API)
+5. **Install and run:**
+   ```bash
+   pnpm install
+   pnpm dev
+   ```
+   App: [http://localhost:3000](http://localhost:3000).
 
-- `DATABASE_URL` – PostgreSQL connection string
-- `REDIS_URL` – Redis (optional for MVP)
-- `JWT_SECRET` – Auth signing secret
-- `PORT` – default 4000
+## Env variables
 
-## Tech alignment with spec
+- `NEXT_PUBLIC_SUPABASE_URL` – Supabase project URL  
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` – Supabase anon (public) key  
+- `SUPABASE_SERVICE_ROLE_KEY` – (Optional) For admin/server-only actions  
 
-- **Currency**: ZAR base; multi-currency in `packages/shared`.
-- **Roles**: Shipper, Driver, Logistics Company, Storage Provider.
-- **Pricing**: Base R14–24/km, load classes, add-ons (stairs, white-glove, etc.) in shared constants and API.
-- **Trust score, subscriptions, insurance, ads**: Backend types and routes stubbed; full implementation in Phase 2–4.
+## Features (MVP)
+
+- Auth (Supabase): sign up / sign in, roles (shipper, driver, logistics, storage)
+- Profiles and verification status
+- Booking flow: create (with pricing), list, accept (driver), status updates
+- Tracking view
+- Shared pricing and ZAR constants in `packages/shared`
+
+## Tech notes
+
+- **Auth:** Supabase Auth with email/password. A trigger creates a row in `public.profiles` on signup with `role` from metadata.
+- **Data:** All tables use RLS. Web app uses the Supabase client (cookies) and Next.js API routes for server-side logic (e.g. pricing, booking create).
+- **Real-time:** Can be added via Supabase Realtime on `bookings` or `tracking_events` for live tracking.
