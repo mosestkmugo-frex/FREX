@@ -38,24 +38,24 @@ export default function LoginPage() {
       });
 
       // Fetch profile in background (don't block redirect); update if we get it in time
-      supabase
-        .from('profiles')
-        .select('id, email, phone, role, verification_status, trust_score')
-        .eq('id', data.user.id)
-        .maybeSingle()
-        .then(({ data: profile }) => {
-          if (profile) {
-            setUser({
-              id: profile.id,
-              email: profile.email ?? data.user?.email ?? null,
-              phone: profile.phone ?? null,
-              role: profile.role ?? 'shipper',
-              verificationStatus: profile.verification_status ?? 'pending',
-              trustScore: profile.trust_score ?? 3,
-            });
-          }
-        })
-        .catch(() => {});
+      void Promise.resolve(
+        supabase
+          .from('profiles')
+          .select('id, email, phone, role, verification_status, trust_score')
+          .eq('id', data.user.id)
+          .maybeSingle()
+      ).then(({ data: profile }) => {
+        if (profile) {
+          setUser({
+            id: profile.id,
+            email: profile.email ?? data.user?.email ?? null,
+            phone: profile.phone ?? null,
+            role: profile.role ?? 'shipper',
+            verificationStatus: profile.verification_status ?? 'pending',
+            trustScore: profile.trust_score ?? 3,
+          });
+        }
+      }).catch(() => {});
 
       const dash = '/dashboard';
       router.push(dash);
