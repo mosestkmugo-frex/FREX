@@ -110,7 +110,7 @@ export default function RegisterPage() {
                 onClick={() => setRole(r.value)}
                 className={`rounded-lg border p-3 text-left text-sm ${
                   role === r.value
-                    ? 'border-frex-primary bg-teal-50 text-frex-primary'
+                    ? 'border-frex-primary bg-orange-50 text-frex-primary'
                     : 'border-slate-200'
                 }`}
               >

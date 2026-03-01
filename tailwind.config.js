@@ -5,9 +5,9 @@ module.exports = {
     extend: {
       colors: {
         frex: {
-          primary: '#0f766e',
-          secondary: '#0d9488',
-          accent: '#f59e0b',
+          primary: '#f97316',
+          secondary: '#ea580c',
+          accent: '#0a0a0a',
         },
       },
     },

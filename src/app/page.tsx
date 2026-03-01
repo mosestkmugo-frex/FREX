@@ -162,7 +162,7 @@ export default function HomePage() {
           <h2 className="text-2xl font-bold sm:text-3xl">
             Ready to get started?
           </h2>
-          <p className="mt-4 text-teal-100">
+          <p className="mt-4 text-orange-100">
             Create an account and start shipping or driving today.
           </p>
           <Link
