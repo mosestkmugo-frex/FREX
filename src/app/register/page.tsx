@@ -33,25 +33,21 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      const signUpPromise = supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { role, full_name: fullName },
         },
       });
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timed out. Please try again.')), 15000)
-      );
-      const { data, error: signUpError } = await Promise.race([signUpPromise, timeoutPromise]);
       if (signUpError) throw new Error(signUpError.message);
       if (!data.user) throw new Error('Sign up failed');
 
-      // If email confirmation is required, session may be null – show message and stop
+      // If Supabase has "Confirm email" on, session is null – tell user to sign in
       if (!data.session) {
         setError('');
         setLoading(false);
-        setError('Check your email to confirm your account, then sign in.');
+        setError('Account created. Please sign in.');
         return;
       }
 

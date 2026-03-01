@@ -30,7 +30,7 @@ FREX connects shippers with drivers, logistics companies, and storage providers.
 
 4. **Env:** Set `SUPABASE_SERVICE_ROLE_KEY` (Supabase Dashboard → Settings → API) in `.env.local` and in Vercel. Required for new user signup (profile creation).
 
-5. **Auth:** In Supabase Dashboard → Authentication → Providers, enable Email. (Optional: disable “Confirm email” for faster local testing.)
+5. **Auth:** In Supabase Dashboard → Authentication → Providers, enable Email. (Turn off Confirm email so “Confirm email” users can sign in immediately after sign up.)
 
 6. **Install and run:**
    ```bash

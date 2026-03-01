@@ -18,17 +18,26 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    if (!url || !key || url.includes('placeholder')) {
+      setError('Supabase not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local');
+      return;
+    }
     setLoading(true);
+    let cancelled = false;
+    const timeoutId = setTimeout(() => {
+      cancelled = true;
+      setLoading(false);
+      setError('Sign-in is taking too long. Check your connection and that .env.local has the correct Supabase URL and anon key.');
+    }, 30000);
     try {
-      const signInPromise = supabase.auth.signInWithPassword({ email, password });
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timed out. Please try again.')), 15000)
-      );
-      const { data, error: signInError } = await Promise.race([signInPromise, timeoutPromise]);
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (cancelled) return;
+      clearTimeout(timeoutId);
       if (signInError) throw new Error(signInError.message);
       if (!data.user) throw new Error('No user returned');
 
-      // Set user immediately so we can redirect; AuthProvider will sync profile from session
       setUser({
         id: data.user.id,
         email: data.user.email ?? null,
@@ -38,7 +47,6 @@ export default function LoginPage() {
         trustScore: 3,
       });
 
-      // Fetch profile in background (don't block redirect); update if we get it in time
       void Promise.resolve(
         supabase
           .from('profiles')
@@ -58,12 +66,14 @@ export default function LoginPage() {
         }
       }).catch(() => {});
 
-      const dash = '/dashboard';
-      router.push(dash);
+      router.push('/dashboard');
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      if (!cancelled) {
+        setError(err instanceof Error ? err.message : 'Login failed');
+      }
     } finally {
+      if (!cancelled) clearTimeout(timeoutId);
       setLoading(false);
     }
   };
