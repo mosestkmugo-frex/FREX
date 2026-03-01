@@ -21,7 +21,7 @@ export default function LoginPage() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
     if (!url || !key || url.includes('placeholder')) {
-      setError('Supabase not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local');
+      setError('Supabase not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local (local) or Vercel → Project → Settings → Environment Variables (deploy), then redeploy.');
       return;
     }
     setLoading(true);
@@ -29,8 +29,8 @@ export default function LoginPage() {
     const timeoutId = setTimeout(() => {
       cancelled = true;
       setLoading(false);
-      setError('Sign-in is taking too long. Check your connection and that .env.local has the correct Supabase URL and anon key.');
-    }, 30000);
+      setError('Sign-in is taking too long. Check your connection. On Vercel, set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Environment Variables and redeploy.');
+    }, 60000);
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (cancelled) return;
