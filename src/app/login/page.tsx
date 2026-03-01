@@ -26,37 +26,38 @@ export default function LoginPage() {
       });
       if (signInError) throw new Error(signInError.message);
       if (!data.user) throw new Error('No user returned');
-      const { data: profile } = await supabase
+
+      // Set user immediately so we can redirect; AuthProvider will sync profile from session
+      setUser({
+        id: data.user.id,
+        email: data.user.email ?? null,
+        phone: data.user.phone ?? null,
+        role: 'shipper',
+        verificationStatus: 'pending',
+        trustScore: 3,
+      });
+
+      // Fetch profile in background (don't block redirect); update if we get it in time
+      supabase
         .from('profiles')
         .select('id, email, phone, role, verification_status, trust_score')
         .eq('id', data.user.id)
-        .single();
-      setUser(
-        profile
-          ? {
+        .maybeSingle()
+        .then(({ data: profile }) => {
+          if (profile) {
+            setUser({
               id: profile.id,
-              email: profile.email ?? data.user.email ?? null,
+              email: profile.email ?? data.user?.email ?? null,
               phone: profile.phone ?? null,
               role: profile.role ?? 'shipper',
               verificationStatus: profile.verification_status ?? 'pending',
               trustScore: profile.trust_score ?? 3,
-            }
-          : {
-              id: data.user.id,
-              email: data.user.email ?? null,
-              phone: null,
-              role: 'shipper',
-              verificationStatus: 'pending',
-              trustScore: 3,
-            }
-      );
-      const role = profile?.role ?? 'shipper';
-      const dash =
-        role === 'shipper'
-          ? '/dashboard/shipper'
-          : role === 'driver'
-            ? '/dashboard/driver'
-            : '/dashboard';
+            });
+          }
+        })
+        .catch(() => {});
+
+      const dash = '/dashboard';
       router.push(dash);
       router.refresh();
     } catch (err: unknown) {
