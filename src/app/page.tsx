@@ -28,6 +28,7 @@ export default function HomePage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-6">
         <h1 className="text-2xl font-bold text-frex-primary">FREX</h1>
+        <p className="text-sm text-slate-400">v{process.env.NEXT_PUBLIC_APP_VERSION ?? '0.1.0'}</p>
         <p className="text-slate-600">Signed in as {user.email || user.phone}</p>
         <Link
           href={dashboard}
@@ -42,6 +43,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 p-6">
       <h1 className="text-3xl font-bold text-frex-primary">FREX</h1>
+      <p className="text-sm text-slate-400">v{process.env.NEXT_PUBLIC_APP_VERSION ?? '0.1.0'}</p>
       <p className="max-w-md text-center text-slate-600">
         On-demand freight. Connect with drivers, logistics companies, and storage – all in one platform.
       </p>

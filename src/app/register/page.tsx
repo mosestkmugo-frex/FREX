@@ -33,68 +33,54 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const signUpPromise = supabase.auth.signUp({
         email,
         password,
         options: {
           data: { role, full_name: fullName },
         },
       });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Connection timed out. Please try again.')), 15000)
+      );
+      const { data, error: signUpError } = await Promise.race([signUpPromise, timeoutPromise]);
       if (signUpError) throw new Error(signUpError.message);
       if (!data.user) throw new Error('Sign up failed');
 
-      // Create profile via API (service role). Pass token so it works before cookies are set.
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (data.session?.access_token) {
-        headers.Authorization = `Bearer ${data.session.access_token}`;
+      // If email confirmation is required, session may be null – show message and stop
+      if (!data.session) {
+        setError('');
+        setLoading(false);
+        setError('Check your email to confirm your account, then sign in.');
+        return;
       }
-      const profileRes = await fetch('/api/auth/profile', {
+
+      // Set user and redirect immediately; don't block on profile API
+      setUser({
+        id: data.user.id,
+        email: data.user.email ?? null,
+        phone: data.user.phone ?? null,
+        role: role as 'shipper' | 'driver' | 'logistics_company' | 'storage_provider',
+        verificationStatus: 'pending',
+        trustScore: 3,
+      });
+
+      // Create profile in background (with timeout so we never hang)
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      headers.Authorization = `Bearer ${data.session.access_token}`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      fetch('/api/auth/profile', {
         method: 'POST',
         headers,
         body: JSON.stringify({ role, fullName }),
         credentials: 'same-origin',
-      });
-      if (!profileRes.ok) {
-        const err = await profileRes.json().catch(() => ({}));
-        throw new Error((err as { error?: string }).error || 'Database error saving new user');
-      }
+        signal: controller.signal,
+      })
+        .catch(() => {})
+        .finally(() => clearTimeout(timeoutId));
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, email, phone, role, verification_status, trust_score')
-        .eq('id', data.user.id)
-        .single();
-      setUser(
-        profile
-          ? {
-              id: profile.id,
-              email: profile.email ?? data.user.email ?? null,
-              phone: profile.phone ?? null,
-              role: profile.role ?? 'shipper',
-              verificationStatus: profile.verification_status ?? 'pending',
-              trustScore: profile.trust_score ?? 3,
-            }
-          : {
-              id: data.user.id,
-              email: data.user.email ?? null,
-              phone: null,
-              role: role as 'shipper' | 'driver' | 'logistics_company' | 'storage_provider',
-              verificationStatus: 'pending',
-              trustScore: 3,
-            }
-      );
-      if (role === 'driver' && fullName) {
-        await supabase.from('driver_profiles').upsert({
-          user_id: data.user.id,
-          full_name: fullName,
-        });
-      }
-      const dash =
-        role === 'shipper'
-          ? '/dashboard/shipper'
-          : role === 'driver'
-            ? '/dashboard/driver'
-            : '/dashboard';
+      const dash = '/dashboard';
       router.push(dash);
       router.refresh();
     } catch (err: unknown) {

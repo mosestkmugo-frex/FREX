@@ -20,10 +20,11 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const signInPromise = supabase.auth.signInWithPassword({ email, password });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Connection timed out. Please try again.')), 15000)
+      );
+      const { data, error: signInError } = await Promise.race([signInPromise, timeoutPromise]);
       if (signInError) throw new Error(signInError.message);
       if (!data.user) throw new Error('No user returned');
 

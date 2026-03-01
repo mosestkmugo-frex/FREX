@@ -30,34 +30,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
-  const fetchProfile = async (authUser: SupabaseUser): Promise<User | null> => {
+  const fallbackUser = (authUser: SupabaseUser): User => ({
+    id: authUser.id,
+    email: authUser.email ?? null,
+    phone: authUser.phone ?? null,
+    role: 'shipper',
+    verificationStatus: 'pending',
+    trustScore: 3,
+  });
+
+  const fetchProfile = async (authUser: SupabaseUser): Promise<User> => {
     const { data: profile } = await supabase
       .from('profiles')
       .select('id, email, phone, role, verification_status, trust_score')
       .eq('id', authUser.id)
-      .single();
-    if (!profile) return null;
-    return {
-      id: profile.id,
-      email: profile.email ?? authUser.email ?? null,
-      phone: profile.phone ?? null,
-      role: profile.role ?? 'shipper',
-      verificationStatus: profile.verification_status ?? 'pending',
-      trustScore: profile.trust_score ?? 3,
-    };
+      .maybeSingle();
+    if (profile) {
+      return {
+        id: profile.id,
+        email: profile.email ?? authUser.email ?? null,
+        phone: profile.phone ?? null,
+        role: profile.role ?? 'shipper',
+        verificationStatus: profile.verification_status ?? 'pending',
+        trustScore: profile.trust_score ?? 3,
+      };
+    }
+    // No profile yet – ensure one is created (e.g. after signup or if API failed)
+    fetch('/api/auth/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'shipper' }),
+      credentials: 'same-origin',
+    }).catch(() => {});
+    return fallbackUser(authUser);
   };
 
   useEffect(() => {
-    const init = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-      const u = await fetchProfile(authUser);
-      setUser(u);
+    let cancelled = false;
+    const timeoutId = setTimeout(() => {
+      if (cancelled) return;
       setLoading(false);
+    }, 8000);
+
+    const init = async () => {
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (cancelled) return;
+        if (!authUser) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        const u = await fetchProfile(authUser);
+        if (cancelled) return;
+        setUser(u);
+      } catch {
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
     init();
 
@@ -68,10 +99,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         return;
       }
-      const u = await fetchProfile(session.user);
-      setUser(u);
+      try {
+        const u = await fetchProfile(session.user);
+        setUser(u);
+      } catch {
+        setUser(fallbackUser(session.user));
+      }
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
