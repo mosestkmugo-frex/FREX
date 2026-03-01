@@ -26,13 +26,20 @@ export default function LoginPage() {
     }
     setLoading(true);
     let cancelled = false;
+    const AUTH_TIMEOUT_MS = 25000;
     const timeoutId = setTimeout(() => {
       cancelled = true;
       setLoading(false);
-      setError('Sign-in is taking too long. Check your connection. On Vercel, set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Environment Variables and redeploy.');
-    }, 60000);
+      setError('Sign-in is taking too long. Check your connection and try again.');
+    }, AUTH_TIMEOUT_MS);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Sign-in is taking too long. Check your connection and try again.')), AUTH_TIMEOUT_MS)
+    );
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error: signInError } = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        timeoutPromise,
+      ]);
       if (cancelled) return;
       clearTimeout(timeoutId);
       if (signInError) throw new Error(signInError.message);

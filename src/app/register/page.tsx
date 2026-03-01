@@ -32,14 +32,21 @@ export default function RegisterPage() {
       return;
     }
     setLoading(true);
+    const AUTH_TIMEOUT_MS = 25000;
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Sign up is taking too long. Check your connection and try again.')), AUTH_TIMEOUT_MS)
+    );
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await Promise.race([
+        supabase.auth.signUp({
         email,
         password,
         options: {
           data: { role, full_name: fullName },
         },
-      });
+      }),
+        timeoutPromise,
+      ]);
       if (signUpError) throw new Error(signUpError.message);
       if (!data.user) throw new Error('Sign up failed');
 

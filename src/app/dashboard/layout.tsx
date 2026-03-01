@@ -9,10 +9,17 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
+  if (loading && !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-slate-600">Loading...</p>
+      </div>
+    );
+  }
   if (!user) {
     router.replace('/login');
     return null;

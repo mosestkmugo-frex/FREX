@@ -20,6 +20,8 @@ const AuthContext = createContext<{
   logout: () => Promise<void>;
 }>(null!);
 
+const AUTH_TIMEOUT_MS = 8000;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,20 +42,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const fetchProfile = async (authUser: SupabaseUser): Promise<User> => {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, email, phone, role, verification_status, trust_score')
-      .eq('id', authUser.id)
-      .maybeSingle();
-    if (profile) {
-      return {
-        id: profile.id,
-        email: profile.email ?? authUser.email ?? null,
-        phone: profile.phone ?? null,
-        role: profile.role ?? 'shipper',
-        verificationStatus: profile.verification_status ?? 'pending',
-        trustScore: profile.trust_score ?? 3,
-      };
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Profile fetch timeout')), AUTH_TIMEOUT_MS)
+    );
+    try {
+      const { data: profile } = await Promise.race([
+        supabase
+          .from('profiles')
+          .select('id, email, phone, role, verification_status, trust_score')
+          .eq('id', authUser.id)
+          .maybeSingle(),
+        timeoutPromise,
+      ]);
+      if (profile) {
+        return {
+          id: profile.id,
+          email: profile.email ?? authUser.email ?? null,
+          phone: profile.phone ?? null,
+          role: profile.role ?? 'shipper',
+          verificationStatus: profile.verification_status ?? 'pending',
+          trustScore: profile.trust_score ?? 3,
+        };
+      }
+    } catch {
+      // Timeout or error – use fallback
     }
     // No profile yet – ensure one is created (e.g. after signup or if API failed)
     fetch('/api/auth/profile', {
@@ -74,7 +86,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const init = async () => {
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const getUserPromise = supabase.auth.getUser();
+        const getUserTimeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Auth init timeout')), AUTH_TIMEOUT_MS)
+        );
+        const { data: { user: authUser } } = await Promise.race([getUserPromise, getUserTimeout]);
         if (cancelled) return;
         if (!authUser) {
           setUser(null);

@@ -9,6 +9,7 @@ export default function DashboardPage() {
   const role = user?.role;
   if (role === 'shipper') router.replace('/dashboard/shipper');
   else if (role === 'driver') router.replace('/dashboard/driver');
+  else if (role) router.replace('/dashboard/shipper'); // logistics_company, storage_provider → shipper for now
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-12">
       <p className="text-slate-600">Redirecting...</p>
