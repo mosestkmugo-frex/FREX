@@ -14,7 +14,6 @@
   "engines": { "node": ">=18" },
   "packageManager": "pnpm@9.0.0",
   "dependencies": {
-    "@frex/shared": "file:./packages/shared",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "next": "14.2.0",

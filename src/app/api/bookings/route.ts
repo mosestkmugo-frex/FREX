@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { calculatePrice } from '@frex/shared';
-import type { LoadClass, VehicleType } from '@frex/shared';
+import { calculatePrice } from '@/lib/shared';
+import type { LoadClass, VehicleType } from '@/lib/shared';
 
 function generateBookingReference(): string {
   const chars = '0123456789ABCDEF';
