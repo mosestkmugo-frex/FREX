@@ -41,7 +41,14 @@ export default function LoginPage() {
               verificationStatus: profile.verification_status ?? 'pending',
               trustScore: profile.trust_score ?? 3,
             }
-          : null
+          : {
+              id: data.user.id,
+              email: data.user.email ?? null,
+              phone: null,
+              role: 'shipper',
+              verificationStatus: 'pending',
+              trustScore: 3,
+            }
       );
       const role = profile?.role ?? 'shipper';
       const dash =

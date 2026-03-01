@@ -43,10 +43,14 @@ export default function RegisterPage() {
       if (signUpError) throw new Error(signUpError.message);
       if (!data.user) throw new Error('Sign up failed');
 
-      // Create profile via API (service role) so it works even if the DB trigger fails
+      // Create profile via API (service role). Pass token so it works before cookies are set.
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (data.session?.access_token) {
+        headers.Authorization = `Bearer ${data.session.access_token}`;
+      }
       const profileRes = await fetch('/api/auth/profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ role, fullName }),
         credentials: 'same-origin',
       });
