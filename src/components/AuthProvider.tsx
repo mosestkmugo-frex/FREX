@@ -21,6 +21,8 @@ const AuthContext = createContext<{
 }>(null!);
 
 const AUTH_TIMEOUT_MS = 8000;
+const USER_ROLES = ['shipper', 'driver', 'logistics_company', 'storage_provider'] as const;
+type UserRole = (typeof USER_ROLES)[number];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -32,11 +34,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
+  const roleFromAuthMetadata = (authUser: SupabaseUser): UserRole => {
+    const role = (authUser.user_metadata as { role?: unknown } | undefined)?.role;
+    return USER_ROLES.includes(role as UserRole) ? (role as UserRole) : 'shipper';
+  };
+
   const fallbackUser = (authUser: SupabaseUser): User => ({
     id: authUser.id,
     email: authUser.email ?? null,
     phone: authUser.phone ?? null,
-    role: 'shipper',
+    role: roleFromAuthMetadata(authUser),
     verificationStatus: 'pending',
     trustScore: 3,
   });
@@ -68,10 +75,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Timeout or error – use fallback
     }
     // No profile yet – ensure one is created (e.g. after signup or if API failed)
+    const role = roleFromAuthMetadata(authUser);
     fetch('/api/auth/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: 'shipper' }),
+      body: JSON.stringify({ role }),
       credentials: 'same-origin',
     }).catch(() => {});
     return fallbackUser(authUser);

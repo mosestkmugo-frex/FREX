@@ -14,6 +14,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const roleFromAuthMetadata = (authUser: { user_metadata?: { role?: unknown } | null }) => {
+    const role = authUser.user_metadata?.role;
+    return role === 'shipper' || role === 'driver' || role === 'logistics_company' || role === 'storage_provider'
+      ? role
+      : 'shipper';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +55,7 @@ export default function LoginPage() {
         id: data.user.id,
         email: data.user.email ?? null,
         phone: data.user.phone ?? null,
-        role: 'shipper',
+        role: roleFromAuthMetadata(data.user),
         verificationStatus: 'pending',
         trustScore: 3,
       });
