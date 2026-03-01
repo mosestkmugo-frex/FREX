@@ -42,6 +42,19 @@ export default function RegisterPage() {
       });
       if (signUpError) throw new Error(signUpError.message);
       if (!data.user) throw new Error('Sign up failed');
+
+      // Create profile via API (service role) so it works even if the DB trigger fails
+      const profileRes = await fetch('/api/auth/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, fullName }),
+        credentials: 'same-origin',
+      });
+      if (!profileRes.ok) {
+        const err = await profileRes.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error || 'Database error saving new user');
+      }
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('id, email, phone, role, verification_status, trust_score')

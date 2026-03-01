@@ -24,13 +24,15 @@ FREX connects shippers with drivers, logistics companies, and storage providers.
    # Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
    ```
 
-3. **Database:** In the Supabase SQL Editor, run the migration:
-   - Open **SQL Editor** → New query → paste contents of `supabase/migrations/20250224000001_initial_schema.sql` → Run.
-   - If the trigger `on_auth_user_created` fails (permissions), create the profile from your app on first sign-in or add a small API route that upserts `profiles` using the service role key.
+3. **Database:** In the Supabase SQL Editor, run the migrations (in order):
+   - Run `supabase/migrations/20250224000001_initial_schema.sql`.
+   - Then run `supabase/migrations/20250224000002_drop_auth_trigger.sql` so signup is not blocked by the DB trigger (profiles are created by the app via the service role instead).
 
-4. **Auth:** In Supabase Dashboard → Authentication → Providers, enable Email. (Optional: disable “Confirm email” for faster local testing.)
+4. **Env:** Set `SUPABASE_SERVICE_ROLE_KEY` (Supabase Dashboard → Settings → API) in `.env.local` and in Vercel. Required for new user signup (profile creation).
 
-5. **Install and run:**
+5. **Auth:** In Supabase Dashboard → Authentication → Providers, enable Email. (Optional: disable “Confirm email” for faster local testing.)
+
+6. **Install and run:**
    ```bash
    pnpm install
    pnpm dev
@@ -41,7 +43,7 @@ FREX connects shippers with drivers, logistics companies, and storage providers.
 
 - `NEXT_PUBLIC_SUPABASE_URL` – Supabase project URL  
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` – Supabase anon (public) key  
-- `SUPABASE_SERVICE_ROLE_KEY` – (Optional) For admin/server-only actions  
+- `SUPABASE_SERVICE_ROLE_KEY` – **Required for signup.** Used by `/api/auth/profile` to create the user profile.  
 
 ## Features (MVP)
 
